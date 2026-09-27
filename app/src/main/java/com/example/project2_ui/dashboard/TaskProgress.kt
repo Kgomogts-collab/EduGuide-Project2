@@ -30,6 +30,7 @@ fun TaskProgress(modifier: Modifier = Modifier) {
     }
 
 }
+//
 
 @Composable
 fun ProgressItem(modifier: Modifier = Modifier,taskName: String,progress: Float) {

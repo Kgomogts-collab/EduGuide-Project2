@@ -32,6 +32,7 @@ fun Meetings(modifier: Modifier = Modifier) {
     }
     
 }
+//
 
 @Composable
 fun MeetingItem(modifier: Modifier = Modifier,name: String,leader: String,date: String) {

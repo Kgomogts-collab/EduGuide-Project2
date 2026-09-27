@@ -26,7 +26,7 @@ fun Dashboard(modifier: Modifier = Modifier) {
         val configuration = LocalConfiguration.current
         val screenWidthDp = configuration.screenWidthDp
 
-
+        //Data will come from our created entities
         Text("EDU-GUIDE",modifier = Modifier.fillMaxWidth(),textAlign = TextAlign.Center)
         CustomCentreSpacer(dp = screenWidthDp/2,composable = { CustomDropdownMenu() {} })
         Text("Task Progress")
