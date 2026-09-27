@@ -1,12 +1,13 @@
 package com.example.project2_ui.screen_notes
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -18,394 +19,349 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.project2_ui.data_model.MockData
-import com.example.project2_ui.data_model.FileType
 import com.example.project2_ui.data_model.Note
-import com.example.project2_ui.components.DotIndicator
-import com.example.project2_ui.components.SectionHeader
-import com.example.project2_ui.components.Tag
 import com.example.project2_ui.theme.*
 
-private enum class NoteMode(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    RECORD("Record", Icons.Filled.Mic),
-    TRANSLATE("Translate", Icons.Filled.Translate),
-    SPEECH("Text-to-Speech", Icons.Filled.RecordVoiceOver)
-}
+private enum class NotesView { LIST, DETAIL, CREATE }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesScreen() {
-    var mode by remember { mutableStateOf(NoteMode.RECORD) }
-    var isLive by remember { mutableStateOf(true) }
-    var searchQuery by remember { mutableStateOf("") }
+    var view by remember { mutableStateOf(NotesView.LIST) }
+    var notes by remember { mutableStateOf(MockData.notes) }
+    var selectedNote by remember { mutableStateOf<Note?>(null) }
 
-    Scaffold(
-        containerColor = Parchment,
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { isLive = !isLive },
-                containerColor = Coral,
-                contentColor = Color.White,
-                icon = { Icon(if (isLive) Icons.Filled.Stop else Icons.Filled.FiberManualRecord, null) },
-                text = { Text(if (isLive) "End session" else "Start listening") }
-            )
+    when (view) {
+        NotesView.LIST -> NotesListView(
+            notes = notes,
+            onOpenNote = { note ->
+                selectedNote = note
+                view = NotesView.DETAIL
+            },
+            onCreateClick = { view = NotesView.CREATE }
+        )
+        NotesView.DETAIL -> {
+            val note = selectedNote
+            if (note != null) {
+                NoteDetailView(
+                    note = note,
+                    onBack = { view = NotesView.LIST },
+                    onToggleFavorite = {
+                        notes = notes.map { if (it.id == note.id) it.copy(isFavorite = !it.isFavorite) else it }
+                        selectedNote = notes.first { it.id == note.id }
+                    },
+                    onToggleReviewed = {
+                        notes = notes.map { if (it.id == note.id) it.copy(isReviewed = !it.isReviewed) else it }
+                        selectedNote = notes.first { it.id == note.id }
+                    }
+                )
+            }
         }
-    ) { padding ->
+        NotesView.CREATE -> CreateNoteView(
+            onCancel = { view = NotesView.LIST },
+            onSave = { newNote ->
+                notes = notes + newNote
+                view = NotesView.LIST
+            }
+        )
+    }
+}
+
+@Composable
+private fun NotesListView(
+    notes: List<Note>,
+    onOpenNote: (Note) -> Unit,
+    onCreateClick: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedFilter by remember { mutableStateOf("All") }
+
+    val filtered = notes.filter { note ->
+        val matchesSearch = searchQuery.isBlank() ||
+                note.title.contains(searchQuery, ignoreCase = true) ||
+                note.topic.contains(searchQuery, ignoreCase = true)
+        val matchesFilter = selectedFilter == "All" || note.course.contains(selectedFilter, ignoreCase = true)
+        matchesSearch && matchesFilter
+    }
+
+    Scaffold(containerColor = Parchment) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            contentPadding = PaddingValues(top = 16.dp, bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                Column {
-                    Text("Live Class & Notes", style = MaterialTheme.typography.displaySmall, color = InkNavy)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "COS 212 · Database Design",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedText
+                Text("Notes", style = MaterialTheme.typography.displaySmall, color = InkNavy)
+                Text(
+                    "Everything you've written, in one place",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedText
+                )
+            }
+
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Search notes...") },
+                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = MutedText) },
+                        singleLine = true,
+                        shape = EduGuideShapes.medium
                     )
+                    Button(
+                        onClick = onCreateClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = Coral, contentColor = Color.White),
+                        shape = EduGuideShapes.medium
+                    ) {
+                        Icon(Icons.Filled.Add, null, modifier = Modifier.size(18.dp))
+                    }
                 }
             }
 
-            item { LiveStatusBanner(isLive = isLive) }
-
-            item { ModeSelector(selected = mode, onSelect = { mode = it }) }
-
-            item { LiveTranscriptCard(mode = mode) }
-
-            item { AiSummaryCard() }
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(MockData.courseFilters) { filterName ->
+                        FilterChip(
+                            selected = selectedFilter == filterName,
+                            onClick = { selectedFilter = filterName },
+                            label = { Text(filterName) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = InkNavy,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+                }
+            }
 
             item {
-                SectionHeader(
-                    title = "Your notes",
-                    subtitle = "${MockData.notes.size} saved this week"
-                )
+                Text("My Notes", style = MaterialTheme.typography.titleMedium, color = InkNavy)
             }
-
-            item {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search notes, courses, keywords…") },
-                    leadingIcon = { Icon(Icons.Filled.Search, null, tint = MutedText) },
-                    shape = EduGuideShapes.medium,
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = InkNavy,
-                        unfocusedBorderColor = DividerTone,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-            }
-
-            val filtered = MockData.notes.filter {
-                searchQuery.isBlank() ||
-                        it.title.contains(searchQuery, ignoreCase = true) ||
-                        it.courseTag.contains(searchQuery, ignoreCase = true)
-            }
-            items(filtered) { note -> NoteCard(note) }
 
             if (filtered.isEmpty()) {
                 item {
                     Text(
-                        "No notes match \"$searchQuery\".",
+                        "No notes found.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MutedText,
-                        modifier = Modifier.padding(vertical = 24.dp)
+                        modifier = Modifier.padding(vertical = 20.dp)
                     )
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun LiveStatusBanner(isLive: Boolean) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(CardShapeSignature)
-            .background(if (isLive) InkNavy else ParchmentDim)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        DotIndicator(color = if (isLive) Coral else MutedText, size = 10.dp)
-        Column(Modifier.weight(1f)) {
-            Text(
-                if (isLive) "Listening in real time" else "No active session",
-                style = MaterialTheme.typography.titleMedium,
-                color = if (isLive) Color.White else CharcoalText
-            )
-            Text(
-                if (isLive) "Auto-transcribing · timestamps on key moments" else "Tap start to begin transcribing your next class",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isLive) Color.White.copy(alpha = 0.75f) else MutedText
-            )
-        }
-        if (isLive) {
-            Text("12:34", style = MaterialTheme.typography.titleMedium, color = Color.White)
-        }
-    }
-}
-
-@Composable
-private fun ModeSelector(selected: NoteMode, onSelect: (NoteMode) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(ChipShape)
-            .background(ParchmentDim)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        NoteMode.values().forEach { m ->
-            val isSelected = m == selected
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(ChipShape)
-                    .background(if (isSelected) InkNavy else Color.Transparent)
-                    .clickable { onSelect(m) }
-                    .padding(vertical = 10.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    m.icon, null,
-                    tint = if (isSelected) Color.White else MutedText,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    m.label,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (isSelected) Color.White else MutedText
-                )
+            items(filtered) { note ->
+                NoteListCard(note = note, onClick = { onOpenNote(note) })
             }
         }
     }
 }
 
 @Composable
-private fun LiveTranscriptCard(mode: NoteMode) {
+private fun NoteListCard(note: Note, onClick: () -> Unit) {
     Card(
-        shape = CardShapeSignature,
+        onClick = onClick,
+        shape = EduGuideShapes.medium,
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(Modifier.padding(18.dp)) {
-            when (mode) {
-                NoteMode.RECORD -> {
-                    Text("Transcript", style = MaterialTheme.typography.titleMedium, color = InkNavy)
-                    Spacer(Modifier.height(10.dp))
-                    MockData.transcript.forEach { line ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Text(
-                                line.timestamp,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (line.isKeyMoment) Coral else MutedText,
-                                modifier = Modifier.width(44.dp)
-                            )
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    line.speaker,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MutedText
-                                )
-                                Text(
-                                    line.text,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = CharcoalText,
-                                    fontWeight = if (line.isKeyMoment) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            }
-                            if (line.isKeyMoment) {
-                                Tag("KEY", AmberFaint, Amber)
-                            }
-                        }
-                    }
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Description, null, tint = InkNavy, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(note.title, style = MaterialTheme.typography.titleMedium, color = CharcoalText, modifier = Modifier.weight(1f))
+                if (note.isFavorite) {
+                    Icon(Icons.Filled.Star, null, tint = Amber, modifier = Modifier.size(18.dp))
                 }
-                NoteMode.TRANSLATE -> {
-                    Text("Real-time translation", style = MaterialTheme.typography.titleMedium, color = InkNavy)
-                    Spacer(Modifier.height(12.dp))
-                    Text("Translate to", style = MaterialTheme.typography.bodyMedium, color = MutedText)
-                    Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("isiZulu", "Afrikaans", "Sesotho", "English").forEachIndexed { i, lang ->
-                            Tag(lang, if (i == 0) InkNavy else ParchmentDim, if (i == 0) Color.White else CharcoalText)
-                        }
-                    }
-                    Spacer(Modifier.height(14.dp))
+                if (note.isReviewed) {
+                    Spacer(Modifier.width(4.dp))
+                    Icon(Icons.Filled.CheckCircle, null, tint = Sage, modifier = Modifier.size(18.dp))
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "${note.course} · ${note.dateUpdated}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MutedText
+            )
+        }
+    }
+}
+
+@Composable
+private fun NoteDetailView(
+    note: Note,
+    onBack: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onToggleReviewed: () -> Unit
+) {
+    var showSummary by remember { mutableStateOf(false) }
+
+    Scaffold(containerColor = Parchment) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Spacer(Modifier.height(16.dp))
+            TextButton(onClick = onBack) {
+                Icon(Icons.Filled.ArrowBack, null, tint = InkNavy)
+                Spacer(Modifier.width(4.dp))
+                Text("Back", color = InkNavy)
+            }
+
+            Text(note.title, style = MaterialTheme.typography.displaySmall, color = InkNavy)
+            Text("Course: ${note.course}", style = MaterialTheme.typography.bodyMedium, color = MutedText)
+            Text("Topic: ${note.topic}", style = MaterialTheme.typography.bodyMedium, color = MutedText)
+
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                note.tags.forEach { tag ->
                     Box(
                         Modifier
-                            .fillMaxWidth()
-                            .clip(EduGuideShapes.medium)
-                            .background(ParchmentDim)
-                            .padding(14.dp)
+                            .clip(ChipShape)
+                            .background(InkNavyFaint)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
+                        Text("#$tag", style = MaterialTheme.typography.labelSmall, color = InkNavy)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Card(
+                shape = EduGuideShapes.medium,
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Text(
+                    note.content,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = CharcoalText,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            if (showSummary) {
+                Spacer(Modifier.height(12.dp))
+                Card(
+                    shape = EduGuideShapes.medium,
+                    colors = CardDefaults.cardColors(containerColor = SageFaint)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("AI Summary", style = MaterialTheme.typography.titleMedium, color = Sage)
+                        Spacer(Modifier.height(8.dp))
                         Text(
-                            "\"Lo mfundi kufanele athumele umsebenzi ngaphambi komhla ophelele.\"",
+                            "Key Points\n\n• ${note.topic} covers the core ideas of this section.\n• Focus on definitions and worked examples for revision.\n• Try answering: what is the purpose of ${note.topic}?",
                             style = MaterialTheme.typography.bodyMedium,
                             color = CharcoalText
                         )
                     }
-                    Spacer(Modifier.height(10.dp))
-                    FilledTonalButton(
-                        onClick = {},
-                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = InkNavy, contentColor = Color.White)
-                    ) {
-                        Icon(Icons.Filled.PlayArrow, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Play audio")
-                    }
-                }
-                NoteMode.SPEECH -> {
-                    Text("Text to speech", style = MaterialTheme.typography.titleMedium, color = InkNavy)
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        "Hover or select any note text to have it read aloud — helpful for accessibility and multitasking while reviewing.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedText
-                    )
-                    Spacer(Modifier.height(14.dp))
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(EduGuideShapes.medium)
-                            .background(SageFaint)
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(Icons.Filled.VolumeUp, null, tint = Sage)
-                        Text("Reading: \"Functional dependency exercise…\"", style = MaterialTheme.typography.bodyMedium, color = CharcoalText)
-                    }
                 }
             }
+
+            Spacer(Modifier.height(20.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { /* edit not wired up yet */ }, shape = EduGuideShapes.medium) {
+                    Text("Edit")
+                }
+                Button(
+                    onClick = { showSummary = !showSummary },
+                    colors = ButtonDefaults.buttonColors(containerColor = InkNavy, contentColor = Color.White),
+                    shape = EduGuideShapes.medium
+                ) {
+                    Text(if (showSummary) "Hide Summary" else "Generate Summary")
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onToggleReviewed, shape = EduGuideShapes.medium) {
+                    Icon(Icons.Filled.CheckCircle, null, tint = Sage, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(if (note.isReviewed) "Reviewed" else "Mark as Reviewed")
+                }
+                OutlinedButton(onClick = onToggleFavorite, shape = EduGuideShapes.medium) {
+                    Icon(Icons.Filled.Star, null, tint = Amber, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(if (note.isFavorite) "Pinned" else "Pin")
+                }
+            }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
 @Composable
-private fun AiSummaryCard() {
-    var expanded by remember { mutableStateOf(true) }
-    Card(
-        shape = CardShapeSignature,
-        colors = CardDefaults.cardColors(containerColor = InkNavy),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(Modifier.padding(18.dp)) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.AutoAwesome, null, tint = AmberFaint)
-                    Spacer(Modifier.width(8.dp))
-                    Text("AI Class Summary", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                }
-                Icon(
-                    if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                    null, tint = Color.White
-                )
-            }
-            AnimatedVisibility(visible = expanded) {
-                Column {
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        "Today's class covered normalisation up to 3NF, with a worked example on functional " +
-                                "dependencies. Two exam-relevant moments were flagged automatically. No jargon — " +
-                                "generated straight from your live transcript.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.85f)
-                    )
-                    Spacer(Modifier.height(14.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
-                            onClick = {},
-                            colors = ButtonDefaults.buttonColors(containerColor = Coral, contentColor = Color.White),
-                            shape = EduGuideShapes.medium
-                        ) {
-                            Icon(Icons.Filled.Download, null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Download summary")
-                        }
-                        OutlinedButton(
-                            onClick = {},
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                            shape = EduGuideShapes.medium
-                        ) {
-                            Text("View full note")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+private fun CreateNoteView(onCancel: () -> Unit, onSave: (Note) -> Unit) {
+    var title by remember { mutableStateOf("") }
+    var course by remember { mutableStateOf("") }
+    var topic by remember { mutableStateOf("") }
+    var content by remember { mutableStateOf("") }
 
-@Composable
-private fun NoteCard(note: Note) {
-    Card(
-        shape = CardShapeSignature,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+    Scaffold(containerColor = Parchment) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 20.dp)
         ) {
-            Box(
-                Modifier
-                    .size(42.dp)
-                    .clip(CircleShape)
-                    .background(ParchmentDim),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    when (note.fileType) {
-                        FileType.PDF -> Icons.Filled.PictureAsPdf
-                        FileType.DOCX -> Icons.Filled.Description
-                        FileType.TXT -> Icons.Filled.Notes
-                    },
-                    null, tint = InkNavy, modifier = Modifier.size(20.dp)
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(note.title, style = MaterialTheme.typography.titleMedium, color = CharcoalText)
+            Spacer(Modifier.height(16.dp))
+            Text("New Note", style = MaterialTheme.typography.displaySmall, color = InkNavy)
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = title, onValueChange = { title = it },
+                label = { Text("Title") }, modifier = Modifier.fillMaxWidth(), shape = EduGuideShapes.medium
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = course, onValueChange = { course = it },
+                label = { Text("Subject / Course") }, modifier = Modifier.fillMaxWidth(), shape = EduGuideShapes.medium
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = topic, onValueChange = { topic = it },
+                label = { Text("Topic") }, modifier = Modifier.fillMaxWidth(), shape = EduGuideShapes.medium
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = content, onValueChange = { content = it },
+                label = { Text("Note content") },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
+                shape = EduGuideShapes.medium
+            )
+
+            Spacer(Modifier.height(20.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = onCancel, shape = EduGuideShapes.medium) {
+                    Text("Cancel")
                 }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    note.preview,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MutedText,
-                    maxLines = 2
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Tag(note.courseTag, InkNavyFaint, InkNavy)
-                    Text(note.dateCreated, style = MaterialTheme.typography.labelSmall, color = MutedText)
-                    if (note.hasAiSummary) {
-                        Spacer(Modifier.width(2.dp))
-                        Icon(Icons.Filled.AutoAwesome, null, tint = Amber, modifier = Modifier.size(13.dp))
-                    }
+                Button(
+                    onClick = {
+                        if (title.isNotBlank()) {
+                            onSave(
+                                Note(
+                                    id = "n${System.currentTimeMillis()}",
+                                    title = title,
+                                    course = course.ifBlank { "General" },
+                                    topic = topic,
+                                    content = content,
+                                    dateUpdated = "Updated just now"
+                                )
+                            )
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Coral, contentColor = Color.White),
+                    shape = EduGuideShapes.medium
+                ) {
+                    Text("Save Note")
                 }
             }
         }

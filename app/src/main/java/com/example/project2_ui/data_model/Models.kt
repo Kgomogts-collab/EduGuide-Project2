@@ -1,46 +1,45 @@
 package com.example.project2_ui.data_model
 
-enum class Difficulty { EASY, MEDIUM, HARD }
-enum class Importance { LOW, MEDIUM, HIGH }
-enum class FileType { PDF, DOCX, TXT }
-
 data class Note(
     val id: String,
     val title: String,
-    val courseTag: String,
-    val preview: String,
-    val dateCreated: String,
-    val fileType: FileType,
-    val hasAiSummary: Boolean
+    val course: String,
+    val topic: String,
+    val content: String,
+    val tags: List<String> = emptyList(),
+    val dateUpdated: String,
+    val isFavorite: Boolean = false,
+    val isReviewed: Boolean = false
 )
 
-data class TranscriptLine(
-    val timestamp: String,
-    val speaker: String,
-    val text: String,
-    val isKeyMoment: Boolean = false
-)
+enum class ModuleStatus { ON_TRACK, IN_PROGRESS, NEEDS_ATTENTION }
 
-data class ContributionTask(
-    val id: String,
-    val title: String,
-    val difficulty: Difficulty,
-    val importance: Importance,
-    val hours: Double,
-    val peerVerified: Boolean,
-    val weightedPercent: Int
-)
-
-data class GroupMember(
-    val id: String,
+data class ModuleProgress(
     val name: String,
-    val participationPercent: Int,
-    val peerRating: Double, // out of 5
-    val isCurrentUser: Boolean = false
+    val percent: Int,
+    val status: ModuleStatus
 )
 
-data class ReflectionLogEntry(
-    val dueDate: String,
-    val submitted: Boolean,
-    val text: String = ""
+data class WeeklyStats(
+    val studySessions: Int,
+    val notesCreated: Int,
+    val tasksCompleted: Int,
+    val hoursStudied: Int,
+    val hoursGoal: Int
+)
+
+data class Deadline(
+    val title: String,
+    val dueLabel: String,
+    val progressPercent: Int
+)
+
+data class StudyGoal(
+    val title: String,
+    val currentPercent: Int
+)
+
+data class AttentionItem(
+    val module: String,
+    val message: String
 )
