@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".GroupOverviewActivity">
+
+    <TextView
+        android:id="@+id/group_overview_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Group Overview"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <TextView
+        android:id="@+id/group_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Application Development Group"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/group_overview_title" />
+
+    <TextView
+        android:id="@+id/members_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Group Members"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/group_name" />
+
+    <TextView
+        android:id="@+id/member_one"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Member 1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/members_title" />
+
+    <TextView
+        android:id="@+id/member_two"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Member 2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/member_one" />
+
+    <TextView
+        android:id="@+id/member_three"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Member 3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/member_two" />
+
+    <TextView
+        android:id="@+id/member_four"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Member 4"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/member_three" />
+
+    <TextView
+        android:id="@+id/progress_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Project Progress"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/member_four" />
+
+    <TextView
+        android:id="@+id/progress_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0 of 4 Tasks Completed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/progress_title" />
+
+    <ProgressBar
+        android:id="@+id/project_progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="0"
+        app:layout_constraintTop_toBottomOf="@id/progress_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/tasks_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Current Tasks"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/project_progress_bar" />
+
+    <CheckBox
+        android:id="@+id/task_one"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Create Wireframes"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tasks_title" />
+
+    <CheckBox
+        android:id="@+id/task_two"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Research"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/task_one" />
+
+    <CheckBox
+        android:id="@+id/task_three"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Implement Calendar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/task_two" />
+
+    <CheckBox
+        android:id="@+id/task_four"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Complete Testing"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/task_three" />
+
+    <TextView
+        android:id="@+id/events_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Upcoming Events"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/task_four" />
+
+    <TextView
+        android:id="@+id/event_one"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Group Meeting - 18 Aug, 14:00"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/events_title" />
+
+    <TextView
+        android:id="@+id/event_two"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Assignment Due - 23 Aug"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/event_one" />
+
+    <Button
+        android:id="@+id/view_calendar_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="View Calendar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/event_two" />
+
+    <Button
+        android:id="@+id/add_event_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add Event"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/view_calendar_button" />
+
+    <TextView
+        android:id="@+id/member_one_contribution"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Contribution: 0%"
+        app:layout_constraintStart_toEndOf="@id/member_one"
+        app:layout_constraintTop_toTopOf="@id/member_one" />
+
+    <TextView
+        android:id="@+id/member_two_contribution"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Contribution: 0%"
+        app:layout_constraintStart_toEndOf="@id/member_two"
+        app:layout_constraintTop_toTopOf="@id/member_two" />
+
+    <TextView
+        android:id="@+id/member_three_contribution"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Contribution: 0%"
+        app:layout_constraintStart_toEndOf="@id/member_three"
+        app:layout_constraintTop_toTopOf="@id/member_three" />
+
+    <TextView
+        android:id="@+id/member_four_contribution"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Contribution: 0%"
+        app:layout_constraintStart_toEndOf="@id/member_four"
+        app:layout_constraintTop_toTopOf="@id/member_four" />
+
+
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
